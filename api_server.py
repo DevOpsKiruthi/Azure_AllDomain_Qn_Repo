@@ -13,7 +13,7 @@ Fixes:
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, model_validator
 from typing import List, Optional
 from datetime import datetime
 
@@ -42,9 +42,10 @@ app.add_middleware(
 # ─── REQUEST MODELS ───────────────────────────────────────────────────────────
 
 class QuestionRequest(BaseModel):
-    services: List[str]
+    services: List[str] = []
     difficulty: str = "intermediate"
     scenario: Optional[str] = None
+    description: Optional[str] = None   # NEW: plain-English description drives generation
 
     @field_validator("difficulty")
     @classmethod
@@ -53,12 +54,11 @@ class QuestionRequest(BaseModel):
             raise ValueError("difficulty must be beginner | intermediate | advanced")
         return v
 
-    @field_validator("services")
-    @classmethod
-    def check_services(cls, v: List[str]) -> List[str]:
-        if not v:
-            raise ValueError("At least one service is required")
-        return v
+    @model_validator(mode="after")
+    def check_has_input(self) -> "QuestionRequest":
+        if not self.services and not self.description:
+            raise ValueError("Provide either 'services' list or 'description' text")
+        return self
 
 
 class ChatRequest(BaseModel):
@@ -135,9 +135,9 @@ async def create_question(request: QuestionRequest):
 
     if result["success"]:
         return {
-            "success": True,
-            "data": result["assessment"],
-            "message": result["message"],
+            "success":  True,
+            "data":     result["assessment"],
+            "message":  result["message"],
         }
     raise HTTPException(status_code=500, detail=result.get("error", "Assessment generation failed"))
 
@@ -221,6 +221,110 @@ async def chat_endpoint(request: ChatRequest):
         "data": result,
     }
 
+
+
+class FieldBasedRequest(BaseModel):
+    service: str                        # display name, e.g. "Key Vault"
+    field_values: dict                  # exact form values from user
+    difficulty: str = "beginner"
+    role: str = ""
+    context: str = ""
+
+    @field_validator("difficulty")
+    @classmethod
+    def check_difficulty(cls, v: str) -> str:
+        if v not in ("beginner", "intermediate", "advanced"):
+            raise ValueError("difficulty must be beginner | intermediate | advanced")
+        return v
+
+
+@app.post("/api/generate")
+async def generate_from_fields(request: FieldBasedRequest):
+    """
+    Generate assessment from exact user-entered field values.
+    Returns description, policy JSON, and validation script
+    all using the exact values — no randomness.
+    """
+    import uuid
+    from datetime import datetime
+    result = rules_engine.generate_from_fields(
+        service_display=request.service,
+        field_values=request.field_values,
+        difficulty=request.difficulty,
+        role=request.role,
+        context=request.context,
+    )
+
+    meta   = result["meta"]
+    policy = result["policy"]
+    script = result["script"]
+
+    assessment = {
+        "question_id":     str(uuid.uuid4())[:12],
+        "title":           meta["title"],
+        "service":         request.service,
+        "services":        [request.service],
+        "difficulty":      request.difficulty,
+        "description":     meta["description"],
+        "task_details":    meta["task_details"],
+        "specifications":  meta["specifications"],
+        "role":            meta["role"],
+        "region":          meta["region"],
+        "field_values":    request.field_values,
+        "policy": {
+            "policy_type":    policy.get("policy_type", "resource_restriction"),
+            "description":    policy.get("description", ""),
+            "resource_types": policy.get("resource_types", []),
+            "policy_json":    policy.get("policy_json", {}),
+        },
+        "validation_script": {
+            "language":     "javascript",
+            "dependencies": script.get("dependencies", []),
+            "test_cases":   script.get("test_cases", []),
+            "full_script":  script.get("full_script", ""),
+            "content":      script.get("full_script", ""),
+        },
+        "created_at": datetime.utcnow().isoformat(),
+    }
+
+    return {"success": True, "data": assessment, "message": f"Assessment generated for {request.service}"}
+
+
+@app.get("/api/service-fields")
+async def get_service_fields():
+    """Return the field definitions for all services — used by the frontend form."""
+    from service_fields import SERVICE_FIELDS
+    return {
+        "success": True,
+        "services": list(SERVICE_FIELDS.keys()),
+        "fields": {
+            svc: {
+                "fields":          data["fields"],
+                "role_options":    data["role_options"],
+                "context_options": data["context_options"],
+                "task_intro":      data.get("task_intro", "Task Details:"),
+            }
+            for svc, data in SERVICE_FIELDS.items()
+        }
+    }
+
+@app.get("/api/service-fields/{service}")
+async def get_fields_for_service(service: str):
+    """Return field definitions for a specific service."""
+    from service_fields import SERVICE_FIELDS
+    from urllib.parse import unquote
+    service = unquote(service)
+    if service not in SERVICE_FIELDS:
+        raise HTTPException(status_code=404, detail=f"Service '{service}' not found")
+    data = SERVICE_FIELDS[service]
+    return {
+        "success":         True,
+        "service":         service,
+        "fields":          data["fields"],
+        "role_options":    data["role_options"],
+        "context_options": data["context_options"],
+        "task_intro":      data.get("task_intro", "Task Details:"),
+    }
 
 # ─── EXCEPTION HANDLERS ───────────────────────────────────────────────────────
 

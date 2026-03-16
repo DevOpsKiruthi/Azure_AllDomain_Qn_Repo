@@ -10,8 +10,6 @@ Corrections vs original:
 """
 
 import os
-from dotenv import load_dotenv
-load_dotenv()
 import json
 import uuid
 from typing import List, Dict, Optional, Any
@@ -88,7 +86,8 @@ class SmartAzureAgent:
             # We continue even if MCP fails — rules engine carries the content
 
             # Step 2: Rules engine content
-            question_text = rules_engine.generate_question(services, difficulty, scenario)
+            # generate_assessment_meta returns rich description with task_details + specs
+            meta          = rules_engine.generate_assessment_meta(services, difficulty, scenario)
             policy_dict   = rules_engine.generate_policy(services)
             script_dict   = rules_engine.generate_validation_script(services)
 
@@ -96,9 +95,9 @@ class SmartAzureAgent:
             if isinstance(script_dict, str):
                 script_dict = {"full_script": script_dict, "content": script_dict, "test_cases": [], "dependencies": []}
 
-            # Step 3: Supporting data
-            requirements   = self._generate_requirements(services, difficulty)
-            specifications = self._generate_specifications(services)
+            # Step 3: Supporting data — use meta's task_details as requirements
+            requirements   = meta.get("task_details") or self._generate_requirements(services, difficulty)
+            specifications = meta.get("specifications") or self._generate_specifications(services)
             estimated_min  = self._calculate_estimated_time(services, difficulty)
             test_cases     = script_dict.get("test_cases", [])
 
@@ -111,11 +110,11 @@ class SmartAzureAgent:
             # Step 4: Assemble
             assessment = {
                 "question_id": str(uuid.uuid4())[:12],
-                "title": f"Azure {', '.join(services)} Assessment — {difficulty.title()}",
+                "title": meta.get("title", f"Azure {', '.join(services)} Assessment — {difficulty.title()}"),
                 "services": services,
                 "difficulty": difficulty,
                 "scenario": scenario or f"Azure {difficulty} assessment scenario",
-                "description": question_text,
+                "description": meta.get("description", ""),
                 "requirements": requirements,
                 "estimated_minutes": estimated_min,
                 "specifications": specifications,
