@@ -1,0 +1,320 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Azure Assessment Pro — Azure DevOps CI/CD Pipeline
+# Builds a single Docker image (FastAPI + Streamlit in one container)
+# and deploys to AKS via rolling update.
+#
+# Pipeline flow:
+#   1. CI  — Build Docker image → Push to ACR
+#   2. CD  — Pull from ACR → Deploy to AKS → Verify health
+# ═══════════════════════════════════════════════════════════════════════════════
+
+trigger:
+  branches:
+    include:
+      - main          # Run on every push to main
+  paths:
+    include:
+      - "*.py"        # Only trigger if Python files change
+      - Dockerfile
+      - start.sh
+      - requirements.txt
+
+pr:
+  branches:
+    include:
+      - main          # Also run on pull requests to main (build only, no deploy)
+
+# ─── Variables ────────────────────────────────────────────────────────────────
+variables:
+  # ACR details
+  acrName:            "azureautoreg"
+  acrLoginServer:     "azureautoreg.azurecr.io"
+  imageRepository:    "assessment-app"
+  dockerfilePath:     "$(Build.SourcesDirectory)/Dockerfile"
+
+  # AKS details
+  aksResourceGroup:   "iamneo"
+  aksClusterName:     "assessment-aks"
+  k8sNamespace:       "default"
+  k8sManifest:        "$(Build.SourcesDirectory)/devops/k8s-deploy.yaml"
+
+  # Image tag — use the short git commit SHA for traceability
+  imageTag:           "$(Build.SourceVersion)"
+  imageTagShort:      "$(Build.BuildId)"
+
+  # Service connections (created in Azure DevOps — see setup guide below)
+  acrServiceConnection:  "acr-service-connection"
+  aksServiceConnection:  "aks-service-connection"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# STAGE 1 — Build & Push Docker image to ACR
+# ═══════════════════════════════════════════════════════════════════════════════
+stages:
+- stage: Build
+  displayName: "🔨 Build & Push to ACR"
+  jobs:
+  - job: BuildAndPush
+    displayName: "Build Docker Image"
+    pool:
+      vmImage: "ubuntu-latest"
+
+    steps:
+
+    # ── Step 1: Checkout code ────────────────────────────────────────
+    - checkout: self
+      displayName: "📥 Checkout source code"
+
+    # ── Step 2: Validate Python files have no syntax errors ──────────
+    - script: |
+        echo "Validating Python syntax..."
+        python3 -c "
+        import ast, os, sys
+        errors = []
+        for f in ['api_server.py','azure_mcp_core.py','prompt_chain.py',
+                  'service_fields.py','streamlit_app.py','langchain_agent.py']:
+            if os.path.exists(f):
+                try:
+                    ast.parse(open(f).read())
+                    print(f'  ✅ {f}')
+                except SyntaxError as e:
+                    errors.append(f'  ❌ {f} line {e.lineno}: {e.msg}')
+        if errors:
+            print('\n'.join(errors))
+            sys.exit(1)
+        print('All files OK')
+        "
+      displayName: "✅ Validate Python syntax"
+
+    # ── Step 3: Login to ACR ─────────────────────────────────────────
+    - task: Docker@2
+      displayName: "🔑 Login to ACR"
+      inputs:
+        command: login
+        containerRegistry: $(acrServiceConnection)
+
+    # ── Step 4: Build Docker image ───────────────────────────────────
+    - task: Docker@2
+      displayName: "🐳 Build image"
+      inputs:
+        command: build
+        containerRegistry: $(acrServiceConnection)
+        repository: $(imageRepository)
+        dockerfile: $(dockerfilePath)
+        buildContext: $(Build.SourcesDirectory)
+        tags: |
+          $(imageTagShort)
+          latest
+
+    # ── Step 5: Push Docker image to ACR ─────────────────────────────
+    - task: Docker@2
+      displayName: "📤 Push image to ACR"
+      inputs:
+        command: push
+        containerRegistry: $(acrServiceConnection)
+        repository: $(imageRepository)
+        tags: |
+          $(imageTagShort)
+          latest
+
+    # ── Step 6: Save image tag for CD stage ──────────────────────────
+    - script: |
+        echo "##vso[task.setvariable variable=imageTagShort;isOutput=true]$(imageTagShort)"
+        echo "Image pushed: $(acrLoginServer)/$(imageRepository):$(imageTagShort)"
+      name: setImageTag
+      displayName: "💾 Save image tag"
+
+    # ── Step 7: Publish k8s manifest as pipeline artifact ────────────
+    - task: PublishPipelineArtifact@1
+      displayName: "📦 Publish k8s manifests"
+      inputs:
+        targetPath: $(Build.SourcesDirectory)/devops
+        artifact: k8s-manifests
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# STAGE 2 — Deploy to AKS
+# ═══════════════════════════════════════════════════════════════════════════════
+- stage: Deploy
+  displayName: "🚀 Deploy to AKS"
+  dependsOn: Build
+  condition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'main'))
+
+  jobs:
+  - deployment: DeployToAKS
+    displayName: "Deploy to AKS cluster"
+    pool:
+      vmImage: "ubuntu-latest"
+    environment: "production"       # Creates environment in Azure DevOps for approval gates
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+
+          # ── Step 1: Download k8s manifests ────────────────────────
+          - task: DownloadPipelineArtifact@2
+            displayName: "📥 Download k8s manifests"
+            inputs:
+              artifactName: k8s-manifests
+              targetPath: $(Pipeline.Workspace)/devops
+
+          # ── Step 2: Replace image tag in manifest ─────────────────
+          - script: |
+              BUILD_ID="$(Build.BuildId)"
+              IMAGE="$(acrLoginServer)/$(imageRepository):${BUILD_ID}"
+              echo "Replacing image placeholder with: $IMAGE"
+              sed -i "s|IMAGE_PLACEHOLDER|${IMAGE}|g" \
+                $(Pipeline.Workspace)/devops/k8s-deploy.yaml
+              echo "--- Manifest after substitution ---"
+              cat $(Pipeline.Workspace)/devops/k8s-deploy.yaml
+            displayName: "🔄 Substitute image tag in manifest"
+
+          # ── Step 3: Get AKS credentials ───────────────────────────
+          - task: AzureCLI@2
+            displayName: "🔑 Get AKS credentials"
+            inputs:
+              azureSubscription: $(aksServiceConnection)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                az aks get-credentials \
+                  --resource-group $(aksResourceGroup) \
+                  --name $(aksClusterName) \
+                  --overwrite-existing
+
+          # ── Step 4: Create/update OpenAI secret in k8s ────────────
+          - task: AzureCLI@2
+            displayName: "🔐 Create OpenAI secret in k8s"
+            inputs:
+              azureSubscription: $(aksServiceConnection)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                az aks get-credentials \
+                  --resource-group $(aksResourceGroup) \
+                  --name $(aksClusterName) \
+                  --overwrite-existing
+
+                # Delete old secret if exists, then recreate
+                kubectl delete secret openai-secrets --ignore-not-found
+
+                kubectl create secret generic openai-secrets \
+                  --from-literal=AZURE_OPENAI_API_KEY="$(AZURE_OPENAI_API_KEY)" \
+                  --from-literal=AZURE_OPENAI_ENDPOINT="$(AZURE_OPENAI_ENDPOINT)" \
+                  --from-literal=AZURE_OPENAI_DEPLOYMENT_NAME="$(AZURE_OPENAI_DEPLOYMENT_NAME)" \
+                  --from-literal=AZURE_OPENAI_API_VERSION="$(AZURE_OPENAI_API_VERSION)"
+
+                echo "✅ Secret created"
+            env:
+              AZURE_OPENAI_API_KEY: $(AZURE_OPENAI_API_KEY)
+              AZURE_OPENAI_ENDPOINT: $(AZURE_OPENAI_ENDPOINT)
+              AZURE_OPENAI_DEPLOYMENT_NAME: $(AZURE_OPENAI_DEPLOYMENT_NAME)
+              AZURE_OPENAI_API_VERSION: $(AZURE_OPENAI_API_VERSION)
+
+          # ── Step 5: Apply k8s manifest ────────────────────────────
+          - task: KubernetesManifest@1
+            displayName: "📋 Apply k8s manifest"
+            inputs:
+              action: deploy
+              connectionType: azureResourceManager
+              azureSubscriptionConnection: $(aksServiceConnection)
+              azureResourceGroup: $(aksResourceGroup)
+              kubernetesCluster: $(aksClusterName)
+              namespace: $(k8sNamespace)
+              manifests: $(Pipeline.Workspace)/devops/k8s-deploy.yaml
+
+          # ── Step 6: Wait for rollout ──────────────────────────────
+          - task: AzureCLI@2
+            displayName: "⏳ Wait for rollout"
+            inputs:
+              azureSubscription: $(aksServiceConnection)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                az aks get-credentials \
+                  --resource-group $(aksResourceGroup) \
+                  --name $(aksClusterName) \
+                  --overwrite-existing
+
+                echo "Waiting for deployment rollout..."
+                kubectl rollout status deployment/assessment-app \
+                  --namespace $(k8sNamespace) \
+                  --timeout=5m
+
+                echo "✅ Rollout complete"
+
+          # ── Step 7: Get public URL ─────────────────────────────────
+          - task: AzureCLI@2
+            displayName: "🌐 Get public URL"
+            inputs:
+              azureSubscription: $(aksServiceConnection)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                az aks get-credentials \
+                  --resource-group $(aksResourceGroup) \
+                  --name $(aksClusterName) \
+                  --overwrite-existing
+
+                echo "Waiting for LoadBalancer IP (up to 3 minutes)..."
+                for i in $(seq 1 18); do
+                  EXTERNAL_IP=$(kubectl get service assessment-app-svc \
+                    --namespace $(k8sNamespace) \
+                    -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null)
+                  if [ -n "$EXTERNAL_IP" ]; then
+                    echo ""
+                    echo "================================================"
+                    echo "  ✅ DEPLOYMENT SUCCESSFUL"
+                    echo "================================================"
+                    echo "  App URL: http://$EXTERNAL_IP:8501"
+                    echo "  API URL: http://$EXTERNAL_IP:8000"
+                    echo "  Health:  http://$EXTERNAL_IP:8000/health"
+                    echo "================================================"
+                    # Set as pipeline variable for downstream tasks
+                    echo "##vso[task.setvariable variable=APP_URL]http://$EXTERNAL_IP:8501"
+                    break
+                  fi
+                  echo "  Waiting... ($i/18)"
+                  sleep 10
+                done
+
+          # ── Step 8: Health check ──────────────────────────────────
+          - task: AzureCLI@2
+            displayName: "🏥 Verify /health endpoint"
+            inputs:
+              azureSubscription: $(aksServiceConnection)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                az aks get-credentials \
+                  --resource-group $(aksResourceGroup) \
+                  --name $(aksClusterName) \
+                  --overwrite-existing
+
+                EXTERNAL_IP=$(kubectl get service assessment-app-svc \
+                  --namespace $(k8sNamespace) \
+                  -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+
+                echo "Checking health at http://$EXTERNAL_IP:8000/health ..."
+                sleep 10
+                HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+                  "http://$EXTERNAL_IP:8000/health" --max-time 10)
+
+                if [ "$HTTP_CODE" = "200" ]; then
+                  echo "✅ Health check passed (HTTP $HTTP_CODE)"
+                else
+                  echo "⚠️  Health check returned HTTP $HTTP_CODE (app may still be starting)"
+                fi
+
+          # ── Step 9: Show pod status ────────────────────────────────
+          - task: AzureCLI@2
+            displayName: "📊 Show pod status"
+            inputs:
+              azureSubscription: $(aksServiceConnection)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                az aks get-credentials \
+                  --resource-group $(aksResourceGroup) \
+                  --name $(aksClusterName) \
+                  --overwrite-existing
+                kubectl get pods --namespace $(k8sNamespace) -o wide
+                kubectl get services --namespace $(k8sNamespace)

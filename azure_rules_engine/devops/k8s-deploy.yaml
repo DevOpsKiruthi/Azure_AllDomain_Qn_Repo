@@ -1,0 +1,128 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Azure Assessment Pro — Kubernetes Manifest
+# Single container: FastAPI (8000) + Streamlit (8501) in one pod
+# API_URL = http://localhost:8000 — always works, no cross-pod networking
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── Deployment ────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: assessment-app
+  labels:
+    app: assessment-app
+    version: "1.0"
+spec:
+  replicas: 2                    # 2 pods for availability
+  selector:
+    matchLabels:
+      app: assessment-app
+  strategy:
+    type: RollingUpdate          # Zero-downtime updates
+    rollingUpdate:
+      maxSurge: 1                # Spin up 1 new pod before killing old
+      maxUnavailable: 0          # Never drop below 2 running pods
+  template:
+    metadata:
+      labels:
+        app: assessment-app
+    spec:
+      containers:
+      - name: assessment-app
+        # IMAGE_PLACEHOLDER is replaced by the pipeline with the real tag
+        image: IMAGE_PLACEHOLDER
+        ports:
+        - containerPort: 8000    # FastAPI
+          name: api
+        - containerPort: 8501    # Streamlit
+          name: ui
+
+        # API_URL = localhost because both services run in the same container
+        env:
+        - name: API_URL
+          value: "http://localhost:8000"
+        - name: PYTHONUNBUFFERED
+          value: "1"
+
+        # OpenAI credentials from Kubernetes secret
+        envFrom:
+        - secretRef:
+            name: openai-secrets
+
+        # ── Health probes ────────────────────────────────────────────
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 60    # Give both services time to start
+          periodSeconds: 15
+          failureThreshold: 3
+
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          failureThreshold: 3
+
+        # ── Resource limits ──────────────────────────────────────────
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+
+      # Restart policy
+      restartPolicy: Always
+
+---
+# ── Service (LoadBalancer — gives a public IP) ────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: assessment-app-svc
+  labels:
+    app: assessment-app
+spec:
+  selector:
+    app: assessment-app
+  type: LoadBalancer              # Azure creates a public IP automatically
+  ports:
+  - name: ui
+    port: 8501                   # External port users access
+    targetPort: 8501
+    protocol: TCP
+  - name: api
+    port: 8000                   # External port for direct API access
+    targetPort: 8000
+    protocol: TCP
+
+---
+# ── Horizontal Pod Autoscaler ─────────────────────────────────────────────────
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: assessment-app-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: assessment-app
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

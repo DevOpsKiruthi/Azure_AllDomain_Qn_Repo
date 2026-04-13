@@ -23,15 +23,13 @@ SERVICE_FIELDS: Dict[str, Dict] = {
 
     # ── Container Instances ───────────────────────────────────────────────────
     "Azure Container Instances": {
-        "role_options": [
-            "Azure Cloud Engineer",
-            "DevOps Engineer",
-            "Platform Engineer",
-        ],
         "context_options": [
-            "creating an Azure Container Instance with specific configurations to host a sample application. The container instance should be set up to run continuously and handle requests efficiently.",
-            "deploying a containerized workload on Azure using Azure Container Instances. The container must be configured with the correct compute allocation and restart behavior.",
-            "provisioning a container-based microservice on Azure Container Instances. The container must meet defined resource limits and availability requirements.",
+            "As an Azure Cloud Engineer, you are tasked with creating an Azure Container Instance with specific configurations to host a sample application. The container instance should be set up to run continuously and handle requests efficiently.",
+            "As a DevOps Engineer, you have been asked to deploy a containerized workload on Azure using Azure Container Instances. The container must be configured with the correct compute allocation and restart behavior.",
+            "As a Platform Engineer at a logistics company, you are provisioning a container-based microservice on Azure Container Instances. The container must meet defined resource limits and restart policies.",
+            "As a Cloud Architect at a startup, you are deploying a lightweight web service using Azure Container Instances to avoid the overhead of a full orchestration platform. The container must be publicly accessible.",
+            "As a Backend Developer, you are setting up a short-lived batch processing container on Azure. The Container Instance must be configured with the correct memory, CPU, and OS type for the workload.",
+            "As a DevOps Engineer at a retail company, you are hosting a promotional web application in a Container Instance. It must use a specific image and restart policy to ensure high availability.",
         ],
         "fields": [
             {"key": "region",           "label": "Region",           "type": "select",  "required": True,  "spec_label": "Region",
@@ -64,15 +62,13 @@ SERVICE_FIELDS: Dict[str, Dict] = {
 
     # ── Storage Accounts ──────────────────────────────────────────────────────
     "Storage Accounts": {
-        "role_options": [
-            "Azure administrator",
-            "Cloud Storage Engineer",
-            "DevOps Engineer",
-        ],
         "context_options": [
-            "configuring an Azure Storage account to support your company's file storage requirements. Your goal is to set up the Storage account with specific configurations to ensure secure and efficient file storage and retrieval.",
-            "provisioning an Azure Storage account to store application assets and user-uploaded content. The account must be configured for optimal performance and durability.",
-            "setting up a centralized Azure Storage account as the persistent backend for a data processing pipeline. Configure the account to ensure high availability and cost-effective access.",
+            "As an Azure administrator, you have been tasked with configuring an Azure Storage account to support your company's file storage requirements. Your goal is to set up the Storage account with specific configurations to ensure secure and efficient file storage and retrieval.",
+            "As a Cloud Storage Engineer at a media company, you are responsible for provisioning an Azure Storage account to store application assets and user-uploaded content. The account must be configured for optimal performance and durability.",
+            "As a DevOps Engineer, you have been asked to set up a centralized Azure Storage account as the persistent backend for a data processing pipeline. Configure the account to ensure high availability and cost-effective access.",
+            "As a Data Engineer at a university, you are provisioning an Azure Storage account to archive student records and academic data. The account must be configured with appropriate redundancy and access tiers.",
+            "As a Backend Developer, you are setting up an Azure Storage account to support a mobile application. The account must be configured with blob and queue services for file uploads and async job processing.",
+            "As a Systems Administrator at a manufacturing company, you are setting up an Azure Storage account to store IoT sensor data. The account must use LRS replication and Hot access tier for frequent reads.",
         ],
         "fields": [
             {"key": "region",            "label": "Region",              "type": "select",  "required": True,  "spec_label": "Location",
@@ -116,15 +112,13 @@ SERVICE_FIELDS: Dict[str, Dict] = {
 
     # ── Key Vault ─────────────────────────────────────────────────────────────
     "Key Vault": {
-        "role_options": [
-            "DevOps Engineer",
-            "Azure Security Engineer",
-            "Cloud Administrator",
-        ],
         "context_options": [
-            "managing secure storage and access to secrets, keys, and certificates. You have been tasked with creating and configuring an Azure Key Vault with specific properties to ensure security and proper management.",
-            "provisioning an Azure Key Vault to store application credentials, TLS certificates, and encryption keys. The vault must be hardened against unauthorized access and data loss.",
-            "setting up centralized secret management for a production workload running on Azure. Your task is to create and configure a Key Vault with the required security properties.",
+            "As a DevOps Engineer, you are responsible for managing secure storage and access to secrets, keys, and certificates. You have been tasked with creating and configuring an Azure Key Vault with specific properties to ensure security and proper management.",
+            "As an Azure Security Engineer at a financial services company, you are tasked with provisioning an Azure Key Vault to store application credentials, TLS certificates, and encryption keys. The vault must be hardened against unauthorized access and data loss.",
+            "As a Cloud Administrator, you are setting up centralized secret management for a production workload running on Azure. Your task is to create and configure a Key Vault with the required security properties.",
+            "As a Security Architect at a healthcare company, you are responsible for implementing secrets management that meets HIPAA compliance. You must create an Azure Key Vault with strict access policies and network restrictions.",
+            "As a Platform Engineer, you are migrating hardcoded application secrets to Azure Key Vault. The vault must be configured with the correct tier, retention settings, and access restrictions.",
+            "As a Cloud Security Engineer at a government agency, you are provisioning an Azure Key Vault to manage encryption keys for data-at-rest. The vault must have purge protection enabled and public access disabled.",
         ],
         "fields": [
             {"key": "region",          "label": "Region",                     "type": "select",  "required": True,  "spec_label": "Location",
@@ -154,15 +148,13 @@ SERVICE_FIELDS: Dict[str, Dict] = {
 
     # ── Logic Apps ────────────────────────────────────────────────────────────
     "Logic Apps": {
-        "role_options": [
-            "DevOps Engineer",
-            "Integration Developer",
-            "Automation Engineer",
-        ],
         "context_options": [
-            "managing various workflows and automation tasks. You have implemented Azure Logic Apps to handle different business operations. Your task is to evaluate and configure a specific Logic App to ensure it is set up correctly with basic properties and triggers.",
-            "building an automated approval workflow using Azure Logic Apps. The Logic App must be configured with the correct plan, location, and an HTTP trigger to receive incoming requests.",
-            "configuring Azure Logic Apps to integrate internal systems. Your task is to set up a Logic App with the required plan and trigger configuration.",
+            "As a DevOps Engineer at a retail company, you are responsible for managing various workflows and automation tasks. You have implemented Azure Logic Apps to handle different business operations. Your task is to evaluate and configure a specific Logic App to ensure it is set up correctly with basic properties and triggers.",
+            "As an Integration Developer, you are tasked with building an automated approval workflow using Azure Logic Apps. The Logic App must be configured with the correct plan, location, and an HTTP trigger to receive incoming requests.",
+            "As an Automation Engineer at a healthcare company, you are responsible for configuring Azure Logic Apps to integrate internal systems. Your task is to set up a Logic App with the required plan and trigger configuration.",
+            "As a Cloud Architect, you are implementing an event-driven integration platform using Azure Logic Apps. The workflow must be triggered via HTTP and route data to downstream systems.",
+            "As a Backend Developer at an insurance company, you need to automate claims processing using Azure Logic Apps. The Logic App must be configured to receive incoming requests and trigger correct downstream actions.",
+            "As a Platform Engineer at a logistics firm, you are orchestrating a shipment tracking workflow using Azure Logic Apps. The Logic App must be set to Enabled state and use an HTTP Request trigger.",
         ],
         "fields": [
             {"key": "region",       "label": "Location",      "type": "select", "required": True,  "spec_label": "Location",
@@ -188,15 +180,13 @@ SERVICE_FIELDS: Dict[str, Dict] = {
 
     # ── Virtual Machines ──────────────────────────────────────────────────────
     "Virtual Machines": {
-        "role_options": [
-            "Azure Cloud Engineer",
-            "Infrastructure Engineer",
-            "Systems Administrator",
-        ],
         "context_options": [
-            "provisioning a Virtual Machine to host a web application backend for your organization. The VM must be configured with the correct size, image, and network access rules.",
-            "deploying a Virtual Machine to run a legacy batch processing application on Azure. The VM must be set up with appropriate compute resources and security settings.",
-            "deploying an Azure Virtual Machine as a development environment for your engineering team. Configure the VM with the required specifications and ensure SSH access is enabled.",
+            "As an Integration Engineer, you are implementing reliable message-based communication between microservices using Azure Service Bus. Configure the namespace and queue for guaranteed delivery.",
+            "As a Backend Developer at an e-commerce company, you are setting up Azure Service Bus to handle asynchronous order processing. Create the namespace and configure a queue with dead-letter handling.",
+            "As a Cloud Architect, you are configuring Azure Service Bus as the messaging backbone for a distributed order management system. The namespace must use Standard tier with the correct queue settings.",
+            "As a Platform Engineer at a healthcare company, you are deploying Azure Service Bus to decouple appointment booking services. The queue must have a lock duration and dead-letter queue configured.",
+            "As a DevOps Engineer, you are setting up Azure Service Bus for a notifications pipeline. The namespace must be on Basic tier with a single queue for sending user alert messages.",
+            "As a Systems Architect at a financial services firm, you are provisioning Azure Service Bus for a payment reconciliation workflow. The queue must have duplicate detection and a strict lock duration.",
         ],
         "fields": [
             {"key": "region",       "label": "Region",          "type": "select", "required": True,  "spec_label": "Region",
@@ -235,15 +225,13 @@ SERVICE_FIELDS: Dict[str, Dict] = {
 
     # ── Azure Kubernetes Service ───────────────────────────────────────────────
     "Azure Kubernetes Service": {
-        "role_options": [
-            "DevOps Engineer",
-            "Kubernetes Administrator",
-            "Platform Engineer",
-        ],
         "context_options": [
-            "deploying a managed Kubernetes cluster on Azure to orchestrate containerized microservices. The cluster must be configured with the correct node pool settings, RBAC, and monitoring.",
-            "provisioning an Azure Kubernetes Service (AKS) cluster to host multiple application workloads. Configure the cluster to meet the company's availability and security requirements.",
-            "setting up an AKS cluster for a CI/CD pipeline that deploys containerized applications. Ensure the cluster is configured with the correct Kubernetes version and networking.",
+            "As a DevOps Engineer, you are deploying a managed Kubernetes cluster on Azure to orchestrate containerized microservices. The cluster must be configured with the correct node pool settings, RBAC, and monitoring.",
+            "As a Kubernetes Administrator, you are provisioning an Azure Kubernetes Service (AKS) cluster to host multiple application workloads. Configure the cluster to meet the company's availability and security requirements.",
+            "As a Platform Engineer, you are setting up an AKS cluster for a CI/CD pipeline that deploys containerized applications. Ensure the cluster is configured with the correct Kubernetes version and networking.",
+            "As a Cloud Architect at a SaaS company, you are deploying an AKS cluster to run a multi-tenant application. The cluster must use Azure CNI networking and have Container Insights monitoring enabled.",
+            "As a DevOps Engineer at a fintech company, you are provisioning an AKS cluster to orchestrate a payment processing microservices architecture. Node pool sizing and RBAC configuration are critical.",
+            "As an Infrastructure Engineer, you are setting up an AKS development cluster for a software engineering team. The cluster must be cost-effective with minimal node count and appropriate Kubernetes version.",
         ],
         "fields": [
             {"key": "region",          "label": "Region",           "type": "select", "required": True,  "spec_label": "Region",
@@ -277,15 +265,13 @@ SERVICE_FIELDS: Dict[str, Dict] = {
 
     # ── Azure SQL Database ────────────────────────────────────────────────────
     "Azure SQL Database": {
-        "role_options": [
-            "Database Administrator",
-            "Azure Data Engineer",
-            "Backend Developer",
-        ],
         "context_options": [
-            "provisioning a managed relational database on Azure to serve as the persistent store for an e-commerce application. The database must be configured with the appropriate service tier, firewall rules, and data protection settings.",
-            "deploying an Azure SQL Database to store transactional data. Ensure the database is secured, backed up appropriately, and accessible only to authorized Azure services.",
-            "setting up a production Azure SQL Database for a SaaS application. Configure the server, database, and all required security settings.",
+            "As a Database Administrator, you are provisioning a managed relational database on Azure to serve as the persistent store for an e-commerce application. The database must be configured with the appropriate service tier, firewall rules, and data protection settings.",
+            "As an Azure Data Engineer, you are deploying an Azure SQL Database to store transactional data. Ensure the database is secured, backed up appropriately, and accessible only to authorized Azure services.",
+            "As a Backend Developer, you are setting up a production Azure SQL Database for a SaaS application. Configure the server, database, and all required security settings.",
+            "As a Cloud Administrator at a university, you are provisioning an Azure SQL Database to store student records and exam results. The database must use the Basic tier with 7-day backup retention.",
+            "As a DevOps Engineer at a fintech startup, you are deploying an Azure SQL Database to support a payment processing backend. The database must have TDE enabled and firewall rules configured for Azure services only.",
+            "As a Systems Engineer at a hospital, you are setting up an Azure SQL Database to store patient appointment data. The database must comply with security standards and have controlled access.",
         ],
         "fields": [
             {"key": "region",        "label": "Region",           "type": "select", "required": True,  "spec_label": "Location",
@@ -319,15 +305,13 @@ SERVICE_FIELDS: Dict[str, Dict] = {
 
     # ── App Service ───────────────────────────────────────────────────────────
     "App Service": {
-        "role_options": [
-            "DevOps Engineer",
-            "Web Developer",
-            "Cloud Engineer",
-        ],
         "context_options": [
-            "deploying a web application using Azure App Service. Your goal is to configure the App Service with the correct runtime, plan tier, and application settings for production use.",
-            "migrating an on-premises web application to Azure App Service. Configure the App Service Plan, runtime stack, and security settings as required.",
-            "hosting a REST API backend on a managed PaaS platform using Azure App Service. Configure the service for production-grade availability and security.",
+            "As a Web Developer, you are deploying a web application using Azure App Service. Your goal is to configure the App Service with the correct runtime, plan tier, and application settings for production use.",
+            "As a DevOps Engineer, you are migrating an on-premises web application to Azure App Service. Configure the App Service Plan, runtime stack, and security settings as required.",
+            "As a Cloud Engineer, you are hosting a REST API backend on a managed PaaS platform using Azure App Service. Configure the service for production-grade availability and security.",
+            "As a Backend Developer at an education platform, you are deploying a student portal using Azure App Service. The app must use Python runtime and be configured with HTTPS-only access.",
+            "As a Platform Engineer at a retail company, you are hosting a product catalog API on Azure App Service. The service must be on Standard tier with the correct runtime and application settings.",
+            "As a Full-Stack Developer, you are deploying a Node.js web application to Azure App Service for a client demo. The app must be configured with Free tier and the correct application setting keys.",
         ],
         "fields": [
             {"key": "region",          "label": "Region",             "type": "select", "required": True,  "spec_label": "Region",
@@ -362,15 +346,13 @@ SERVICE_FIELDS: Dict[str, Dict] = {
 
     # ── Azure Functions ───────────────────────────────────────────────────────
     "Azure Functions": {
-        "role_options": [
-            "Serverless Developer",
-            "DevOps Engineer",
-            "Cloud Engineer",
-        ],
         "context_options": [
-            "implementing event-driven processing using Azure Functions for a mobile application backend. The Function App must be configured with the correct hosting plan, runtime, and an HTTP trigger to accept incoming requests.",
-            "automating order processing workflows using Azure Functions. Configure the Function App with the appropriate settings and monitoring.",
-            "building a serverless API backend using Azure Functions. The Function App must be set up with the correct runtime version and authorization settings.",
+            "As a Serverless Developer, you are implementing event-driven processing using Azure Functions for a mobile application backend. The Function App must be configured with the correct hosting plan, runtime, and an HTTP trigger.",
+            "As a DevOps Engineer at a logistics company, you are automating order processing workflows using Azure Functions. Configure the Function App with the appropriate settings and monitoring.",
+            "As a Backend Engineer, you are building a serverless API using Azure Functions. The Function App must use Consumption Plan with the correct runtime version and function authorization level.",
+            "As a Data Engineer, you are deploying an Azure Function to process incoming IoT telemetry data. The Function App must be linked to a Storage Account and have Application Insights enabled.",
+            "As a Cloud Developer at a startup, you are setting up an Azure Function App to handle webhook events from a third-party payment provider. The function must use Anonymous authorization level for public access.",
+            "As a Platform Engineer, you are migrating a scheduled batch job to an Azure Function. The Function App must use Consumption Plan with a timer-triggered function and linked Storage Account.",
         ],
         "fields": [
             {"key": "region",          "label": "Region",           "type": "select", "required": True,  "spec_label": "Region",
@@ -403,15 +385,13 @@ SERVICE_FIELDS: Dict[str, Dict] = {
 
     # ── Event Hubs ────────────────────────────────────────────────────────────
     "Event Hubs": {
-        "role_options": [
-            "Data Engineer",
-            "Platform Engineer",
-            "Streaming Architect",
-        ],
         "context_options": [
-            "setting up a real-time event streaming pipeline using Azure Event Hubs. Your task is to provision an Event Hub namespace and configure the required partitions, retention, and consumer groups for a high-throughput IoT workload.",
-            "building an event streaming backbone using Azure Event Hubs to process clickstream data. Configure the namespace and Event Hub with the appropriate throughput and retention settings.",
-            "provisioning Azure Event Hubs to ingest telemetry data from IoT devices. The namespace must be configured with the correct SKU and the Event Hub with appropriate partition count.",
+            "As a Data Engineer, you are setting up a real-time event streaming pipeline using Azure Event Hubs for IoT telemetry ingestion. The namespace and Event Hub must be configured with the correct partitions and retention settings.",
+            "As a Platform Engineer at a retail company, you are building an event streaming backbone using Azure Event Hubs to process clickstream data. Configure the namespace and Event Hub with appropriate throughput and retention.",
+            "As a Streaming Architect, you are provisioning Azure Event Hubs to ingest high-frequency telemetry from manufacturing equipment. The namespace must be on Standard tier with the correct throughput units.",
+            "As a Cloud Engineer at a healthcare company, you are setting up Azure Event Hubs to stream patient monitoring data in real time. The Event Hub must have the correct partition count and consumer groups configured.",
+            "As a Backend Developer, you are deploying an Azure Event Hub to capture user activity events from a web application. The namespace must be on Basic tier with minimal throughput for a development environment.",
+            "As a DevOps Engineer, you are provisioning Azure Event Hubs as the ingestion layer for a data lake pipeline. The namespace must support multiple consumer groups for parallel downstream processing.",
         ],
         "fields": [
             {"key": "region",          "label": "Region",             "type": "select", "required": True,  "spec_label": "Region",
@@ -446,15 +426,13 @@ SERVICE_FIELDS: Dict[str, Dict] = {
 
     # ── Azure DNS ─────────────────────────────────────────────────────────────
     "Azure DNS": {
-        "role_options": [
-            "Network Engineer",
-            "Azure Administrator",
-            "Cloud Architect",
-        ],
         "context_options": [
-            "configuring Azure DNS to manage domain records for a corporate website. Your goal is to create a DNS zone and configure the required record sets to ensure the domain resolves correctly.",
-            "migrating DNS management to Azure DNS for centralized control of your organization's domain records. Configure the DNS zone with all required record types.",
-            "setting up an Azure DNS zone for a public-facing application. Configure A, CNAME, and TXT records as required.",
+            "As a Network Engineer, you are configuring Azure DNS to manage domain records for a corporate website. Your goal is to create a DNS zone and configure the required record sets.",
+            "As an Azure Administrator, you are migrating DNS management to Azure DNS for centralized control of your organization's domain records. Configure the DNS zone with all required record types.",
+            "As a Cloud Architect, you are setting up an Azure DNS zone for a public-facing application. Configure A, CNAME, and TXT records as required for the domain.",
+            "As a DevOps Engineer at a SaaS company, you are managing DNS records for multiple client domains using Azure DNS. Create the zone and configure routing records for web and mail traffic.",
+            "As a Platform Engineer, you are setting up Azure DNS to support a new product launch. The DNS zone must have an A record pointing to the CDN endpoint and a CNAME for the www subdomain.",
+            "As a Systems Administrator, you are configuring Azure DNS for an internal application domain. The zone must include A records for application servers and TXT records for domain verification.",
         ],
         "fields": [
             {"key": "zone_name",    "label": "DNS Zone (domain)",  "type": "text",   "required": True,  "spec_label": "DNS Zone",
@@ -482,15 +460,13 @@ SERVICE_FIELDS: Dict[str, Dict] = {
 
     # ── Cosmos DB ─────────────────────────────────────────────────────────────
     "Cosmos DB": {
-        "role_options": [
-            "Azure Data Engineer",
-            "Backend Developer",
-            "Database Administrator",
-        ],
         "context_options": [
-            "provisioning a globally distributed NoSQL database using Azure Cosmos DB for a multi-region application. The account must be configured with geo-redundancy and the appropriate API and throughput settings.",
-            "setting up Azure Cosmos DB as the document store for a real-time leaderboard service. Configure the account with low-latency access and a container with the correct partition key.",
-            "deploying an Azure Cosmos DB account to serve as the primary data store for a mobile application. Configure the database and containers with appropriate throughput and partitioning.",
+            "As an Azure Data Engineer, you are provisioning a globally distributed NoSQL database using Azure Cosmos DB for a multi-region e-commerce application. The account must be configured with geo-redundancy and appropriate API.",
+            "As a Backend Developer at a gaming company, you are setting up Azure Cosmos DB as the document store for a real-time leaderboard service. Configure the account with low latency and correct partition key.",
+            "As a Full-Stack Developer, you are deploying an Azure Cosmos DB account to serve as the primary data store for a mobile application. Configure the database and containers with appropriate throughput.",
+            "As a Cloud Architect at a logistics company, you are setting up Azure Cosmos DB to store shipment tracking events globally. The account must use the SQL API with provisioned throughput and geo-redundancy.",
+            "As a Data Engineer at a media streaming company, you are provisioning Azure Cosmos DB to store user preferences and watch history. The account must use Serverless capacity mode for cost efficiency.",
+            "As a Platform Engineer, you are deploying Azure Cosmos DB as the session store for a distributed web application. The account must use the Core SQL API with a low partition count container.",
         ],
         "fields": [
             {"key": "region",           "label": "Region",               "type": "select", "required": True,  "spec_label": "Region",
@@ -530,15 +506,13 @@ SERVICE_FIELDS: Dict[str, Dict] = {
 
     # ── Virtual Networks ──────────────────────────────────────────────────────
     "Virtual Networks": {
-        "role_options": [
-            "Network Engineer",
-            "Azure Administrator",
-            "Cloud Architect",
-        ],
         "context_options": [
-            "setting up an Azure Virtual Network to isolate application tiers for a multi-tier web application. Configure the VNet with the correct address space, subnets, and an NSG to control traffic.",
-            "provisioning network infrastructure for a production workload on Azure. Your task is to create a Virtual Network with appropriate subnets and network security rules.",
-            "configuring a hub-spoke Virtual Network topology for your organization. Create the VNet with the required address space and subnet configuration.",
+            "As a Network Engineer, you are setting up an Azure Virtual Network to isolate application tiers for a multi-tier web application. Configure the VNet with the correct address space, subnets, and NSG.",
+            "As an Azure Administrator at a manufacturing company, you are provisioning network infrastructure for a production workload. Create a Virtual Network with appropriate subnets and network security rules.",
+            "As a Cloud Architect, you are configuring a hub-spoke Virtual Network topology for your organization. Create the VNet with the required address space and subnet configuration.",
+            "As a DevOps Engineer, you are setting up a Virtual Network for a private AKS cluster deployment. The VNet must have dedicated subnets for nodes, services, and an NSG for controlled ingress.",
+            "As a Security Engineer at a bank, you are provisioning a Virtual Network to isolate sensitive payment processing workloads. The VNet must have strict NSG rules and no public endpoints.",
+            "As an Infrastructure Engineer, you are creating a Virtual Network for a new application environment. The VNet must have a primary subnet with an NSG that allows HTTP and HTTPS traffic only.",
         ],
         "fields": [
             {"key": "region",        "label": "Region",           "type": "select", "required": True,  "spec_label": "Region",
@@ -572,15 +546,13 @@ SERVICE_FIELDS: Dict[str, Dict] = {
 
     # ── Service Bus ───────────────────────────────────────────────────────────
     "Service Bus": {
-        "role_options": [
-            "Integration Engineer",
-            "Backend Developer",
-            "Messaging Architect",
-        ],
         "context_options": [
-            "implementing reliable message-based communication between microservices using Azure Service Bus. Configure the namespace and queue with the correct settings for guaranteed message delivery and dead-letter handling.",
-            "setting up Azure Service Bus to handle asynchronous order processing. Create the Service Bus namespace and configure a queue with appropriate lock duration and dead-letter settings.",
-            "configuring Azure Service Bus as the messaging backbone for a distributed application. Set up the namespace, queue, and required access policies.",
+            "As an Integration Engineer, you are implementing reliable message-based communication between microservices using Azure Service Bus. Configure the namespace and queue with the correct settings for guaranteed message delivery and dead-letter handling.",
+            "As a Backend Developer at an e-commerce company, you are setting up Azure Service Bus to handle asynchronous order processing. Create the namespace and configure a queue with appropriate lock duration and dead-letter settings.",
+            "As a Cloud Architect, you are configuring Azure Service Bus as the messaging backbone for a distributed application. Set up the namespace, queue, and required access policies.",
+            "As a Platform Engineer at a healthcare company, you are deploying Azure Service Bus to decouple appointment booking services from notification services. The queue must have dead-letter handling and correct lock duration.",
+            "As a DevOps Engineer, you are setting up Azure Service Bus for a notifications pipeline. The namespace must be on Basic tier with a single queue for sending user alert messages.",
+            "As a Systems Architect at a financial services firm, you are provisioning Azure Service Bus for a payment reconciliation workflow. The queue must have duplicate detection and a strict lock duration.",
         ],
         "fields": [
             {"key": "region",         "label": "Region",              "type": "select", "required": True,  "spec_label": "Region",
@@ -610,15 +582,13 @@ SERVICE_FIELDS: Dict[str, Dict] = {
 
     # ── Network Security Groups ───────────────────────────────────────────────
     "Network Security Groups": {
-        "role_options": [
-            "Network Security Engineer",
-            "Azure Administrator",
-            "Security Architect",
-        ],
         "context_options": [
-            "securing network traffic to a virtual machine deployment using Azure Network Security Groups. Your task is to create an NSG with specific inbound rules and associate it with the target subnet.",
-            "implementing perimeter security for an application subnet using Network Security Groups. Configure the NSG rules to enforce least-privilege access and block unnecessary traffic.",
-            "configuring NSG rules to enforce least-privilege network access for a production workload. Create the NSG, define the required rules, and associate it with the correct subnet.",
+            "As a Network Security Engineer, you are securing network traffic to a virtual machine deployment using Azure Network Security Groups. Create an NSG with specific inbound rules and associate it with the target subnet.",
+            "As an Azure Administrator, you are implementing perimeter security for an application subnet using Network Security Groups. Configure the NSG rules to enforce least-privilege access.",
+            "As a Security Architect, you are configuring NSG rules to protect a production workload from unauthorized access. Create the NSG, define required rules, and associate it with the correct subnet.",
+            "As a Cloud Engineer at a retail company, you are setting up an NSG to allow web traffic to an App Service backend VM. The NSG must allow HTTP (80) and HTTPS (443) while blocking all other inbound traffic.",
+            "As a DevOps Engineer, you are deploying an NSG to protect a database subnet from direct internet access. The NSG must allow only SQL traffic (port 1433) from the application subnet.",
+            "As an Infrastructure Engineer, you are configuring a Network Security Group for a development environment VM. The NSG must allow SSH (22) for administrators and HTTP (80) for application testing.",
         ],
         "fields": [
             {"key": "region",         "label": "Region",            "type": "select", "required": True,  "spec_label": "Region",

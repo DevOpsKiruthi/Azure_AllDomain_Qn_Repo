@@ -326,6 +326,64 @@ async def get_fields_for_service(service: str):
         "task_intro":      data.get("task_intro", "Task Details:"),
     }
 
+
+# ─── PROMPT-DRIVEN ENDPOINT ───────────────────────────────────────────────────
+
+class PromptRequest(BaseModel):
+    prompt: str                         # free-text description from user
+    client: str = "Generic"             # Parul University | SKG University | LTM | Generic
+    difficulty: str = "beginner"
+
+    @field_validator("difficulty")
+    @classmethod
+    def check_diff(cls, v: str) -> str:
+        if v not in ("beginner", "intermediate", "advanced"):
+            raise ValueError("difficulty must be beginner | intermediate | advanced")
+        return v
+
+    @field_validator("client")
+    @classmethod
+    def check_client(cls, v: str) -> str:
+        allowed = ["Parul University", "SKG University", "LTM", "Generic"]
+        if v not in allowed:
+            return "Generic"
+        return v
+
+
+@app.post("/api/prompt")
+async def generate_from_prompt(request: PromptRequest):
+    """
+    Generate a complete assessment from a free-text prompt description.
+    Supports client-specific formatting: Parul University, SKG University, LTM, Generic.
+    Uses LangChain LLM to parse and enrich the prompt when available.
+    """
+    from prompt_chain import prompt_chain
+    result = prompt_chain.run(
+        prompt=request.prompt,
+        client=request.client,
+        difficulty=request.difficulty,
+    )
+    if result.get("success"):
+        return {"success": True, "data": result["data"],
+                "message": f"Assessment generated for {request.client}"}
+    raise HTTPException(status_code=500, detail="Prompt chain failed")
+
+
+@app.get("/api/clients")
+async def list_clients():
+    """Return supported client names for the frontend dropdown."""
+    return {
+        "success": True,
+        "clients": ["Generic", "Parul University", "SKG University", "LTM"],
+        "descriptions": {
+            "Generic":           "Standard Azure assessment format",
+            "Parul University":  "Verify-style tasks with note about existing resources",
+            "SKG University":    "Infrastructure validation checklist style",
+            "LTM":               "Enterprise action-verb task style",
+        }
+    }
+
+
 # ─── EXCEPTION HANDLERS ───────────────────────────────────────────────────────
 
 @app.exception_handler(404)
@@ -370,9 +428,9 @@ if __name__ == "__main__":
     print("=" * 70)
 
     uvicorn.run(
-        "api_server:app",
+        app,
         host="0.0.0.0",
         port=8000,
-        reload=True,
+        reload=False,
         log_level="info",
     )

@@ -995,8 +995,6 @@ SERVICE_CATALOGUE: Dict = {
             "Microsoft.Network/privateEndpoints",
             "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
             "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
-            "Microsoft.Network/networkInterfaces",
-            "Microsoft.Network/publicIPAddresses",
             "Microsoft.Resources/deployments",
         ],
         "sku_constraints": [],
@@ -1096,12 +1094,55 @@ SERVICE_CATALOGUE: Dict = {
         "sku_constraints": [],
         "default_names": {
             "sqlServerName": 'resourceGroupName + "-sqlserver"',
-            "sqlDbName": '"assessmentdb"',
+            "sqlDbName":     "resourceGroupName",
         },
         "checks": [
             {"weightage": 0.4, "name": "SQL Server Exists",        "fn": "check_sql_server_exists"},
             {"weightage": 0.4, "name": "SQL Database Exists",      "fn": "check_sql_db_exists"},
             {"weightage": 0.2, "name": "Firewall Rule Configured", "fn": "check_sql_firewall"},
+        ],
+    },
+
+    # ── SQL + Private Network combined ────────────────────────────────────────
+    "sql_private": {
+        "display_name": "Azure SQL Database (Private Network)", "category": "Database",
+        "sdks": [
+            {"pkg": "@azure/arm-sql",     "class": "SqlManagementClient",     "var": "sqlClient"},
+            {"pkg": "@azure/arm-network", "class": "NetworkManagementClient", "var": "networkClient"},
+        ],
+        "resource_types": [
+            "Microsoft.Sql/servers",
+            "Microsoft.Sql/servers/databases",
+            "Microsoft.Sql/servers/firewallRules",
+            "Microsoft.Sql/servers/elasticPools",
+            "Microsoft.Sql/servers/auditingSettings",
+            "Microsoft.Sql/servers/virtualNetworkRules",
+            "Microsoft.Network/virtualNetworks",
+            "Microsoft.Network/virtualNetworks/subnets",
+            "Microsoft.Network/networkSecurityGroups",
+            "Microsoft.Network/networkSecurityGroups/securityRules",
+            "Microsoft.Network/privateDnsZones",
+            "Microsoft.Network/privateEndpoints",
+            "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+            "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+            "Microsoft.Resources/deployments",
+        ],
+        "sku_constraints": [],
+        "default_names": {
+            "sqlServerName":      'resourceGroupName + "-sqlserver"',
+            "sqlDbName":          "resourceGroupName",
+            "virtualnetworkname": '"myvnet"',
+            "subnetName":         '"default"',
+            "nsgName":            'resourceGroupName + "-nsg"',
+            "allowedPort":        "3306",
+        },
+        "checks": [
+            {"weightage": 0.20, "name": "SQL Server Exists",           "fn": "check_sql_server_exists"},
+            {"weightage": 0.20, "name": "SQL Database Exists",         "fn": "check_sql_db_exists"},
+            {"weightage": 0.20, "name": "Virtual Network Exists",      "fn": "check_vnet_exists"},
+            {"weightage": 0.15, "name": "Subnet Exists",               "fn": "check_subnet_exists"},
+            {"weightage": 0.15, "name": "NSG Rule Configured",         "fn": "check_nsg_inbound_rules"},
+            {"weightage": 0.10, "name": "SQL Firewall / Private Access","fn": "check_sql_firewall"},
         ],
     },
 
@@ -2066,12 +2107,34 @@ def build_validation_script(service_slugs: List[str], custom_names: Dict = None)
     for cfg in configs:
         all_checks.extend(cfg.get("checks", []))
 
+    # Normalize weights to always sum to 1.0
+    total_w = sum(chk["weightage"] for chk in all_checks)
+    if total_w > 0 and abs(total_w - 1.0) > 0.001:
+        all_checks = [{**c, "weightage": round(c["weightage"] / total_w, 2)} for c in all_checks]
+        drift = round(1.0 - sum(c["weightage"] for c in all_checks), 2)
+        if drift != 0 and all_checks:
+            all_checks[-1] = {**all_checks[-1], "weightage": round(all_checks[-1]["weightage"] + drift, 2)}
+
     vr_lines = ["let validationResult = ["]
     for chk in all_checks:
         vr_lines.append(f"    {{ weightage: {chk['weightage']}, name: \"{chk['name']}\", status: false, error: '' }},")
     vr_lines.append("];")
 
-    name_decls = [f"const {var} = {expr};" for var, expr in names.items()]
+    def _js_safe(expr: str) -> str:
+        expr = expr.strip()
+        if any(c in expr for c in ['+', '(', 'process.', 'resourceGroupName']):
+            return expr
+        if (expr.startswith('"') and expr.endswith('"')) or (expr.startswith("'") and expr.endswith("'")):
+            return expr
+        try:
+            float(expr); return expr
+        except ValueError:
+            pass
+        if expr in ('true', 'false', 'null', 'undefined'):
+            return expr
+        return f'"{expr}"'
+
+    name_decls = [f"const {var} = {_js_safe(expr)};" for var, expr in names.items()]
 
     check_body = []
     for idx, chk in enumerate(all_checks):
@@ -2292,6 +2355,12 @@ class AzureRulesEngine:
         checks = []
         for slug in slugs:
             checks.extend(SERVICE_CATALOGUE.get(slug, {}).get("checks", []))
+        total_w = sum(c["weightage"] for c in checks)
+        if total_w > 0 and abs(total_w - 1.0) > 0.001:
+            checks = [{**c, "weightage": round(c["weightage"] / total_w, 2)} for c in checks]
+            drift  = round(1.0 - sum(c["weightage"] for c in checks), 2)
+            if drift != 0 and checks:
+                checks[-1] = {**checks[-1], "weightage": round(checks[-1]["weightage"] + drift, 2)}
         test_cases = [{"name": c["name"], "description": c["name"],
                        "weightage": c["weightage"], "code": ""} for c in checks]
         pkgs: set = set()
@@ -2342,14 +2411,3 @@ class AzureRulesEngine:
 
 
 rules_engine = AzureRulesEngine()
-
-
-if __name__ == "__main__":
-    import sys
-    slugs = sys.argv[1:] if len(sys.argv) > 1 else ["key_vault"]
-    print(f"\n=== Description for {slugs} ===\n")
-    meta = rules_engine.generate_assessment_meta(slugs, "intermediate")
-    print(meta["description"])
-    print(f"\n=== Policy JSON ===\n")
-    p = rules_engine.generate_policy(slugs)
-    print(json.dumps(p["policy_json"], indent=2))
